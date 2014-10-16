@@ -43,12 +43,7 @@
 
                     <!-- Previous Button -->
 
-                    <ImageButton
-                        android:id="@+id/btnPrevious"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@null"
-                        android:src="@drawable/btn_previous" />
+                    
                     <!-- Backward Button -->
 
                     <ImageButton
@@ -75,13 +70,7 @@
                         android:src="@drawable/btn_forward" />
                     <!-- Next Button -->
 
-                    <ImageButton
-                        android:id="@+id/btnNext"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@null"
-                        android:src="@drawable/btn_next" />
-
+                  
                     <Button
                         android:id="@+id/button1"
                         android:layout_width="wrap_content"

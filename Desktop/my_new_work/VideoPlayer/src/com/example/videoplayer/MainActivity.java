@@ -14,6 +14,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -38,7 +39,7 @@ import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-public class MainActivity extends Activity implements SurfaceHolder.Callback,OnCompletionListener {
+public class MainActivity extends Activity  {
 	Cursor c;
 	ListView lv;
 	ArrayList<HashMap<String, String>> list1, thumb1;
@@ -54,8 +55,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,OnC
 	private int seekForwardTime = 5000; // 5000 milliseconds
 	private int seekBackwardTime = 5000;
 	Button b1;
-	boolean a=false;
+	boolean a = false;
 	String data;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -64,16 +66,6 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,OnC
 		thumb1 = new ArrayList<HashMap<String, String>>();
 		lv = (ListView) findViewById(R.id.listView1);
 		getWindow().setFormat(PixelFormat.UNKNOWN);
-		fm = (FrameLayout) findViewById(R.id.media_layout2);
-		btnPlay = (ImageButton) findViewById(R.id.btnPlay2);
-		btnForward = (ImageButton) findViewById(R.id.btnForward2);
-		btnBackward = (ImageButton) findViewById(R.id.btnBackward2);
-		btnNext = (ImageButton) findViewById(R.id.btnNext2);
-		btnPrevious = (ImageButton) findViewById(R.id.btnPrevious2);
-		main_layout = (FrameLayout) findViewById(R.id.main_layout2);
-		songProgressBar = (SeekBar) findViewById(R.id.songProgressBar2);
-		mSurfaceView = (SurfaceView) this.findViewById(R.id.surfaceView2);
-		b1 = (Button) findViewById(R.id.button2);
 		final String cols[] = { MediaStore.Video.Media.DISPLAY_NAME,
 				MediaStore.Video.Media._ID, MediaStore.Video.Media.SIZE,
 				MediaStore.Video.Media.DATA };
@@ -90,12 +82,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,OnC
 			} while (c.moveToNext());
 		}
 		// c.close();
-		
+
 		lv.setAdapter(new listadapter1(MainActivity.this));
-		surfaceHolder = mSurfaceView.getHolder();
-		surfaceHolder.addCallback(this);
-		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-		mediaPlayer = new MediaPlayer();
 		
 		lv.setOnItemClickListener(new OnItemClickListener() {
 
@@ -103,183 +91,14 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,OnC
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
 				// TODO Auto-generated method stub
-
-				mediaPlayer.reset();
-				surfaceHolder.addCallback(MainActivity.this);
-
-				 data=list1.get(position).get("Data");
-				 try {
-						mediaPlayer.setDataSource(data);
-						mediaPlayer.prepare();
-					} catch (IllegalArgumentException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (SecurityException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IllegalStateException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				main_layout.setVisibility(View.VISIBLE);
+				Intent in=new Intent(getApplicationContext(), VideoPlay.class);
+				in.putExtra("position", list1.get(position).get("Data"));
+				startActivity(in);
+				
 			}
 		});
-		
-		
-
-		main_layout.setOnTouchListener(new OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent arg1) {
-				// TODO Auto-generated method stub
-				fm.postDelayed(new Runnable() {
-
-					public void run() {
-
-						fm.setVisibility(View.GONE);
-
-					}
-				}, 3000); // (3000 == 3secs)
-				fm.setVisibility(View.VISIBLE);
-				return false;
-			}
-		});
-		btnPlay.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View arg0) {
-				// TODO Auto-generated method stub
-				if (mediaPlayer.isPlaying()) {
-					if (mediaPlayer != null) {
-						mediaPlayer.pause();
-						// Changing button image to play button
-						btnPlay.setImageResource(R.drawable.btn_play);
-					}
-				} else {
-					// Resume song
-					if (mediaPlayer != null) {
-						mediaPlayer.start();
-						// Changing button image to pause button
-						btnPlay.setImageResource(R.drawable.btn_pause);
-					}
-				}
-			}
-		});
-
-		btnForward.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View arg0) {
-				// TODO Auto-generated method stub
-				int currentPosition = mediaPlayer.getCurrentPosition();
-				// check if seekForward time is lesser than song duration
-				if (currentPosition + seekForwardTime <= mediaPlayer
-						.getDuration()) {
-					// forward song
-					mediaPlayer.seekTo(currentPosition + seekForwardTime);
-				} else {
-					// forward to end position
-					mediaPlayer.seekTo(mediaPlayer.getDuration());
-				}
-			}
-		});
-		btnBackward.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View arg0) {
-				// TODO Auto-generated method stub
-				int currentPosition = mediaPlayer.getCurrentPosition();
-				// check if seekBackward time is greater than 0 sec
-				if (currentPosition - seekBackwardTime >= 0) {
-					// forward song
-					mediaPlayer.seekTo(currentPosition - seekBackwardTime);
-				} else {
-					// backward to starting position
-					mediaPlayer.seekTo(0);
-				}
-			}
-		});
-		b1.setOnClickListener(new OnClickListener() {
-
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-//			if(a){
-//				float videoWidth = mediaPlayer.getVideoWidth();
-//				float videoHeight = mediaPlayer.getVideoHeight();
-//
-//				View container = (View) mSurfaceView.getParent();
-//				float containerWidth = container.getWidth();
-//				float containerHeight = container.getHeight();
-//
-//				android.view.ViewGroup.LayoutParams lp = mSurfaceView.getLayoutParams();
-//				lp.width = (int) containerWidth;
-//				lp.height = (int) ((videoHeight / videoWidth) * containerWidth);
-//				if (lp.height > containerHeight) {
-//					lp.width = (int) ((videoWidth / videoHeight) * containerHeight);
-//					lp.height = (int) containerHeight;
-//				}
-//				mSurfaceView.setLayoutParams(lp);
-//				a=false;
-//			}else if(a==false){
-//				android.view.ViewGroup.LayoutParams lp = mSurfaceView.getLayoutParams();
-//			
-//				lp.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-//				lp.width=android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-//				mSurfaceView.setLayoutParams(lp);
-//				a=true;
-//			}
-				if(a == true){
-					lv.setVisibility(View.VISIBLE);
-					a=false;
-				}else if(a == false){
-					lv.setVisibility(View.GONE);
-					a=true;
-				}
-			}
-		});
-	}
-
-	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width,
-			int height) {
-		// TODO Auto-generated method stub
 
 	}
-
-	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
-		// TODO Auto-generated method stub
-		mediaPlayer.setDisplay(holder);
-//		float videoWidth = mediaPlayer.getVideoWidth();
-//		float videoHeight = mediaPlayer.getVideoHeight();
-//
-//		View container = (View) mSurfaceView.getParent();
-//		float containerWidth = container.getWidth();
-//		float containerHeight = container.getHeight();
-//
-//		android.view.ViewGroup.LayoutParams lp = mSurfaceView.getLayoutParams();
-//		lp.width = (int) containerWidth;
-//		lp.height = (int) ((videoHeight / videoWidth) * containerWidth);
-//		if (lp.height > containerHeight) {
-//			lp.width = (int) ((videoWidth / videoHeight) * containerHeight);
-//			lp.height = (int) containerHeight;
-//		}
-//		mSurfaceView.setLayoutParams(lp);
-		mediaPlayer.start();
-
-	}
-
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		// TODO Auto-generated method stub
-
-	}
-
-	
 
 	public class listadapter1 extends BaseAdapter {
 		Context context;
@@ -319,21 +138,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,OnC
 			tx = (TextView) v.findViewById(R.id.textView1);
 			img = (ImageView) v.findViewById(R.id.imageView1);
 			tx.setText(list1.get(position).get("Name"));
+
 			
-			int videoId = Integer.parseInt(list1.get(position).get("_id"));
-			Cursor videoThumbnailCursor = managedQuery(MediaStore.Video.Thumbnails.EXTERNAL_CONTENT_URI,
-			thumbcol, MediaStore.Video.Thumbnails.VIDEO_ID+ "=" + videoId, null, null);
-			if (videoThumbnailCursor.moveToFirst()) {
-				do {
-					thumbPath = videoThumbnailCursor.getString(videoThumbnailCursor.getColumnIndex(MediaStore.Video.Thumbnails.DATA));
-					
-				} while (videoThumbnailCursor.moveToNext());
-			}
-			Log.i("ThumbPath: ",""+thumbPath);
-			Log.i("id", ""+list1.get(position).get("Name"));
-			File f=new File(thumbPath);
-			Bitmap b=BitmapFactory.decodeFile(thumbPath);
-			 img.setImageBitmap(b);
+			Bitmap thumbnail = ThumbnailUtils.createVideoThumbnail(
+					list1.get(position).get("Data"),
+					MediaStore.Video.Thumbnails.MINI_KIND);
+			img.setImageBitmap(thumbnail);
 
 			return v;
 		}
@@ -341,11 +151,4 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback,OnC
 	}
 
 
-
-	@Override
-	public void onCompletion(MediaPlayer mp) {
-		// TODO Auto-generated method stub
-		
-	}
-	
 }

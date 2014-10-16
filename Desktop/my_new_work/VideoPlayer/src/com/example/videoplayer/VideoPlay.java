@@ -10,7 +10,9 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.PixelFormat;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnPreparedListener;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Display;
@@ -28,21 +30,25 @@ import android.widget.MediaController;
 import android.widget.SeekBar;
 import android.widget.VideoView;
 
-public class VideoPlay extends Activity implements SurfaceHolder.Callback {
+public class VideoPlay extends Activity implements SurfaceHolder.Callback,
+		SeekBar.OnSeekBarChangeListener {
 	VideoView vx;
 	MediaController mcon;
 	Cursor c;
 	ArrayList<HashMap<String, String>> list1;
 	FrameLayout fm, main_layout;
 	SeekBar songProgressBar;
-	ImageButton btnPlay, btnForward, btnBackward, btnNext, btnPrevious;
+	ImageButton btnPlay, btnForward, btnBackward;
 	private MediaPlayer mediaPlayer;
 	SurfaceView mSurfaceView;
 	SurfaceHolder surfaceHolder;
 	private int seekForwardTime = 5000; // 5000 milliseconds
 	private int seekBackwardTime = 5000;
 	Button b1;
-	boolean a=false;
+	boolean a = false;
+	Utilities utils;
+	Handler mHandler = new Handler();
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -54,30 +60,14 @@ public class VideoPlay extends Activity implements SurfaceHolder.Callback {
 		btnPlay = (ImageButton) findViewById(R.id.btnPlay);
 		btnForward = (ImageButton) findViewById(R.id.btnForward);
 		btnBackward = (ImageButton) findViewById(R.id.btnBackward);
-		btnNext = (ImageButton) findViewById(R.id.btnNext);
-		btnPrevious = (ImageButton) findViewById(R.id.btnPrevious);
+
 		main_layout = (FrameLayout) findViewById(R.id.main_layout);
 		songProgressBar = (SeekBar) findViewById(R.id.songProgressBar);
 		mSurfaceView = (SurfaceView) this.findViewById(R.id.surfaceView1);
 		b1 = (Button) findViewById(R.id.button1);
-		 final String cols[] = { MediaStore.Video.Media.DISPLAY_NAME,
-		 MediaStore.Video.Media._ID, MediaStore.Video.Media.SIZE,
-		 MediaStore.Video.Media.DATA };
-		 c = managedQuery(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cols,null, null, null);
-		 if (c.moveToFirst()) {
-		 do {
-		 HashMap<String, String> hs = new HashMap<String, String>();
-		 hs.put("Name", c.getString(0));
-		 hs.put("_id", c.getString(1));
-		 hs.put("Size", c.getString(2));
-		 hs.put("Data", c.getString(3));
-		 list1.add(hs);
-		 Log.i("list", ""+list1);
-		 } while (c.moveToNext());
-		 }
+		utils = new Utilities();
 
 		String data = getIntent().getStringExtra("position");
-		mediaPlayer = new MediaPlayer();
 		surfaceHolder = mSurfaceView.getHolder();
 		surfaceHolder.addCallback(this);
 		surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
@@ -153,6 +143,7 @@ public class VideoPlay extends Activity implements SurfaceHolder.Callback {
 					// forward to end position
 					mediaPlayer.seekTo(mediaPlayer.getDuration());
 				}
+
 			}
 		});
 		btnBackward.setOnClickListener(new OnClickListener() {
@@ -171,36 +162,39 @@ public class VideoPlay extends Activity implements SurfaceHolder.Callback {
 				}
 			}
 		});
+		songProgressBar.setOnSeekBarChangeListener(this);
 		b1.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-			if(a){
-				float videoWidth = mediaPlayer.getVideoWidth();
-				float videoHeight = mediaPlayer.getVideoHeight();
+				if (a) {
+					float videoWidth = mediaPlayer.getVideoWidth();
+					float videoHeight = mediaPlayer.getVideoHeight();
 
-				View container = (View) mSurfaceView.getParent();
-				float containerWidth = container.getWidth();
-				float containerHeight = container.getHeight();
+					View container = (View) mSurfaceView.getParent();
+					float containerWidth = container.getWidth();
+					float containerHeight = container.getHeight();
 
-				android.view.ViewGroup.LayoutParams lp = mSurfaceView.getLayoutParams();
-				lp.width = (int) containerWidth;
-				lp.height = (int) ((videoHeight / videoWidth) * containerWidth);
-				if (lp.height > containerHeight) {
-					lp.width = (int) ((videoWidth / videoHeight) * containerHeight);
-					lp.height = (int) containerHeight;
+					android.view.ViewGroup.LayoutParams lp = mSurfaceView
+							.getLayoutParams();
+					lp.width = (int) containerWidth;
+					lp.height = (int) ((videoHeight / videoWidth) * containerWidth);
+					if (lp.height > containerHeight) {
+						lp.width = (int) ((videoWidth / videoHeight) * containerHeight);
+						lp.height = (int) containerHeight;
+					}
+					mSurfaceView.setLayoutParams(lp);
+					a = false;
+				} else if (a == false) {
+					android.view.ViewGroup.LayoutParams lp = mSurfaceView
+							.getLayoutParams();
+
+					lp.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+					lp.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+					mSurfaceView.setLayoutParams(lp);
+					a = true;
 				}
-				mSurfaceView.setLayoutParams(lp);
-				a=false;
-			}else if(a==false){
-				android.view.ViewGroup.LayoutParams lp = mSurfaceView.getLayoutParams();
-			
-				lp.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-				lp.width=android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-				mSurfaceView.setLayoutParams(lp);
-				a=true;
-			}
 			}
 		});
 	}
@@ -238,6 +232,59 @@ public class VideoPlay extends Activity implements SurfaceHolder.Callback {
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		// TODO Auto-generated method stub
+
+	}
+
+	public void updateProgressBar() {
+		mHandler.postDelayed(mUpdateTimeTask, 100);
+	}
+
+	private Runnable mUpdateTimeTask = new Runnable() {
+		public void run() {
+			long totalDuration = mediaPlayer.getDuration();
+			long currentDuration = mediaPlayer.getCurrentPosition();
+
+			// Displaying Total Duration time
+			// songTotalDurationLabel.setText(""+utils.milliSecondsToTimer(totalDuration));
+			// Displaying time completed playing
+			// songCurrentDurationLabel.setText(""+utils.milliSecondsToTimer(currentDuration));
+
+			// Updating progress bar
+			int progress = (int) (utils.getProgressPercentage(currentDuration,
+					totalDuration));
+			// Log.d("Progress", ""+progress);
+			songProgressBar.setProgress(progress);
+
+			// Running this thread after 100 milliseconds
+			mHandler.postDelayed(this, 100);
+		}
+	};
+
+	@Override
+	public void onProgressChanged(SeekBar seek, int arg1, boolean arg2) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar arg0) {
+		// TODO Auto-generated method stub
+		mHandler.removeCallbacks(mUpdateTimeTask);
+
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar seekBar) {
+		// TODO Auto-generated method stub
+		mHandler.removeCallbacks(mUpdateTimeTask);
+		int totalDuration = mediaPlayer.getDuration();
+		int currentPosition = utils.progressToTimer(seekBar.getProgress(),
+				totalDuration);
+
+		// forward or backward to certain seconds
+		mediaPlayer.seekTo(currentPosition);
+		updateProgressBar();
+		// update timer progress again
 
 	}
 
