@@ -35,6 +35,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -57,14 +58,13 @@ public class MainActivity extends Activity  {
 	Button b1;
 	boolean a = false;
 	String data;
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		list1 = new ArrayList<HashMap<String, String>>();
 		thumb1 = new ArrayList<HashMap<String, String>>();
-		lv = (ListView) findViewById(R.id.listView1);
+		lv = (ListView) findViewById(R.id.listView2);
 		getWindow().setFormat(PixelFormat.UNKNOWN);
 		final String cols[] = { MediaStore.Video.Media.DISPLAY_NAME,
 				MediaStore.Video.Media._ID, MediaStore.Video.Media.SIZE,
